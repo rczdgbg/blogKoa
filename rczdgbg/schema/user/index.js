@@ -17,12 +17,10 @@ const userSchema = new schema({
     lastLoginAt: { type: Date,default: Date.now() },
     avatar: { type: String, type: String, default: "" }, //头像
 })
-
 userSchema.pre('save', function (next) {
     bcryt.genSalt(SALT_WORK_FACTOR, (err, salt) => {
         if (err) return next(err)
         bcryt.hash(this.password, salt, (err, hash) => {
-            console.log(err)
             if (err) return next(err)
             this.password = hash
             next()

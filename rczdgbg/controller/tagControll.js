@@ -1,15 +1,12 @@
-const userModel = require('../schema/user')
+const tagModel = require('../schema/tag')
 const check = require('../Untils/checkRequest')
 
 /**
- * 新增用户
+ * 新增标签
  */
-exports.addUser = async (ctx) => {
+exports.addTag = async (ctx) => {
     const rules = {
-        userName: ['isString'],
-        account: ['isRequire', 'isEmpty', 'isString'],
-        password: ['isRequire', 'isEmpty', 'isString', 'isPassword'],
-        avatar: ['isAvatar']
+        tagName: ['isRequire', 'isEmpty', 'isString'],
     }
     let req = ctx.params
     let validate = check(rules, req)
@@ -21,21 +18,17 @@ exports.addUser = async (ctx) => {
         return
     }
     try {
-        let find = await userModel.findOne({
-            account: req.account
+        let find = await tagModel.findOne({
+            tagName: req.tagName
         })
         if (find) {
             ctx.body = {
                 code: 0,
-                message: `${find.account}用户已存在！`
+                message: `${find.tagName}标签已存在！`
             }
         } else {
-            //默认昵称账号名
-            if (!req.userName) {
-                req.userName = req.account
-            }
-            let newUser = new userModel(req)
-            await newUser.save()
+            let newTag = new tagModel(req)
+            await newTag.save()
             ctx.body = {
                 code: 1,
                 message: "新增成功！"
@@ -50,14 +43,12 @@ exports.addUser = async (ctx) => {
 }
 
 /**
- * 编辑用户 需要权限
+ * 编辑标签 
  */
-exports.patchUser = async (ctx) => {
+exports.patchTag = async (ctx) => {
     const rules = {
         _id: ['isRequire', 'isString'],
-        userName: ['isString'],
-        password: ['isString', 'isPassword'],
-        avatar: ['isAvatar']
+        tagName: ['isRequire', 'isEmpty', 'isString'],
     }
     let req = ctx.params
     let validate = check(rules, req)
@@ -69,41 +60,22 @@ exports.patchUser = async (ctx) => {
         return
     }
     try {
-        let find = await userModel.findOne({
-            account: req.account
-        })
-        if (find) {
-            ctx.body = {
-                code: 0,
-                message: `${find.account}用户已存在！`
-            }
-        } else {
-            let {
-                userName = "",
-                password = "",
-                avatar = "",
-                _id
-            } = req
-            let updates = {
-                $set: {
-                    userName,
-                    password,
-                    avatar,
-                    updateAt: Date.now()
-                }
-            }
-            await userModel.update(
-                {
-                    _id
-                },
-                updates
-            )
-            ctx.body = {
-                code: 1,
-                message: "修改成功！"
+        let updates = {
+            $set: {
+                tagName: req.tagName,
+                updateAt: Date.now()
             }
         }
-
+        await tagModel.update(
+            {
+                _id: req._id
+            },
+            updates
+        )
+        ctx.body = {
+            code: 1,
+            message: "修改成功！"
+        }
     } catch (err) {
         ctx.body = {
             code: 0,
@@ -113,10 +85,10 @@ exports.patchUser = async (ctx) => {
 }
 
 /**
- * 删除用户 需要权限 支持多个
+ * 删除标签 支持多个
  * @param {array} ids
  */
-exports.deleteUser = async (ctx) => {
+exports.deleteTag = async (ctx) => {
     const rules = {
         ids: ['isRequire', 'isArray', 'isArrayLength'],
     }
@@ -130,7 +102,7 @@ exports.deleteUser = async (ctx) => {
         return
     }
     try {
-        await userModel.remove({ _id: { $in: req.ids } })
+        await tagModel.remove({ _id: { $in: req.ids } })
         ctx.body = {
             code: 1,
             message: "删除成功！"
@@ -144,10 +116,10 @@ exports.deleteUser = async (ctx) => {
 }
 
 /**
- * 查看用户详情 需要权限 
+ * 查看标签详情 需要权限 
  * @param {string} _id
  */
-exports.getUser = async (ctx) => {
+exports.getTag = async (ctx) => {
     const rules = {
         _id: ['isRequire', 'isString', 'isEmpty'],
     }
@@ -161,9 +133,9 @@ exports.getUser = async (ctx) => {
         return
     }
     try {
-        let find = await userModel.findOne({
+        let find = await tagModel.findOne({
             _id: req._id
-        }, { __v: 0, password: 0 })
+        },{__v: 0})
         ctx.body = {
             code: 1,
             message: "查询成功！",
@@ -177,16 +149,15 @@ exports.getUser = async (ctx) => {
     }
 }
 /**
- * 查看用户列表 
+ * 查看标签列表 
  * @param {string} _id
- * @param {string} userName
+ * @param {string} tagName
  * @param {string} account
  */
-exports.getUserList = async (ctx) => {
+exports.getTagList = async (ctx) => {
     const rules = {
         _id: ['isString'],
-        userName: ['isString'],
-        account: ['isString'],
+        tagName: ['isString'],
         page: ['isRequire', "isNumber"],
         pageSize: ['isRequire', "isNumber"],
     }
@@ -198,20 +169,17 @@ exports.getUserList = async (ctx) => {
         }
         return
     }
-    const { page = 1, pageSize = 10, account = '', userName = '', _id = '' } = ctx.params
+    const { page = 1, pageSize = 10, tagName = '', _id = '' } = ctx.params
     try {
         let query = {}
-        if (_id) {
+        if(_id){
             query['_id'] = _id
         }
-        if (account) {
-            query['account'] = { $regex: new RegExp(account, 'i') }
+        if(tagName){
+            query['tagName'] = { $regex: new RegExp(tagName, 'i')}
         }
-        if (userName) {
-            query['userName'] = { $regex: new RegExp(userName, 'i') }
-        }
-        let total = await userModel.count(query)
-        let find = await userModel.find(query, { __v: 0, password: 0 })
+        let total = await tagModel.count(query)
+        let find = await tagModel.find(query, {__v: 0})
             .skip((page - 1) * pageSize)
             .limit(pageSize)
             .sort({ 'createAt': -1 })
@@ -223,6 +191,59 @@ exports.getUserList = async (ctx) => {
         }
     } catch (err) {
         ctx.body = {
+            code: 0,
+            message: JSON.stringify(`查询失败：${err.message}`)
+        }
+    }
+}
+
+/**
+ * 查看所有标签列表 
+ * @param {string} _id
+ */
+exports.getAllTagList = async (ctx) => {
+    try {
+        let find = await tagModel.find({}, {__v: 0})
+            .sort({ 'createAt': -1 })
+            ctx.body =  {
+            code: 1,
+            message: "查询成功！",
+            data: find,
+            total,
+        }
+    } catch (err) {
+        ctx.body =  {
+            code: 0,
+            message: JSON.stringify(`查询失败：${err.message}`)
+        }
+    }
+}
+
+/**
+ * 查询标签 内部查询
+ * @param {string} _id
+ */
+exports.getAllTag= async (req) => {
+    const rules = {
+        ids: ['isRequire', 'isString', 'isEmpty'],
+    }
+    let validate = check(rules, req)
+    if (!validate.check) {
+        return {
+            code: 2,
+            message: validate.msg
+        }
+    }
+    try {
+        let find = await tagModel.find({ _id: { $in: req.ids.split(',') }}, {__v: 0})
+            .sort({ 'createAt': -1 })
+            return {
+            code: 1,
+            message: "查询成功！",
+            data: find,
+        }
+    } catch (err) {
+        return  {
             code: 0,
             message: JSON.stringify(`查询失败：${err.message}`)
         }

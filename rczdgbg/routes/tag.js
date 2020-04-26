@@ -1,0 +1,10 @@
+const router = require('koa-router')()
+let {addTag,patchTag,deleteTag,getTag,getTagList,getAllTagList} = require('../controller/tagControll')
+router.prefix('/tags')
+router.post('/addTag', addTag)
+router.patch('/patchTag', patchTag)
+router.delete('/deleteTag', deleteTag)
+router.get('/getTag', getTag)
+router.get('/getTagList', getTagList)
+router.get('/getAllTagList', getAllTagList)
+module.exports = router

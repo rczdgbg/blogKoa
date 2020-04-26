@@ -6,8 +6,8 @@ const onerror = require('koa-onerror')
 const koaBody = require('koa-body')
 const logger = require('koa-logger')
 const { connectDB } =  require('./mongoose')
-const index = require('./routes/index')
-const users = require('./routes/users')
+const Router = require('koa-router')
+const requireDirectory = require('require-directory')
 
 // error handler
 onerror(app)
@@ -43,8 +43,16 @@ app.use(async (ctx, next) => {
 })
 
 // routes
-app.use(index.routes(), index.allowedMethods())
-app.use(users.routes(), users.allowedMethods())
+// 将所有的路由加载上,自动加载代码
+requireDirectory(module, './routes', { visit: whenLoadModule })
+function whenLoadModule(obj) {
+  if (obj instanceof Router) {
+    app.use(obj.routes(), obj.allowedMethods())
+  }
+}
+// app.use(index.routes(), index.allowedMethods())
+// app.use(users.routes(), users.allowedMethods())
+// app.use(tags.routes(), tags.allowedMethods())
 
 // error-handling
 app.on('error', (err, ctx) => {
